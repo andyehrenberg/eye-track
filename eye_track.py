@@ -6,7 +6,7 @@ Created on Sat Nov 10 17:03:21 2018
 """
 import dlib
 import cv2
-import numpy
+import numpy as np
 
 path = "shape_predictor_68_face_landmarks.dat"
 
@@ -14,17 +14,33 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(path)
 
 def get_landmarks(im):
+    """ Returns facial landmarks from image using the shape_predictor_68_face_landmarks.dat pre-trained model
+    Args:
+        im: image from webcam
+    
+    Returns:
+        A matrix of coordinates of facial landmarks
+    """
     #first detect face
     rects = detector(im, 1)
     
     #cases for if multiple or zero faces are detected
     if len(rects) != 1:
-        return numpy.matrix([0])
+        return np.matrix([0])
         
     #return matrix of coordinates of facial landmarks
-    return numpy.matrix([[pt.x, pt.y] for pt in predictor(im, rects[0]).parts()])
+    return np.matrix([[pt.x, pt.y] for pt in predictor(im, rects[0]).parts()])
 
 def get_eyes(im, landmarks):
+    """ Gets coordinates of eyes, gets rectangular region for each eye, and normalizes these regions
+    Args:
+        im: image from webcam
+        landmarks: coordinates of facial landmarks
+    
+    Returns:
+        If a face is found in im: im, and a normalized image of each eye. If 0 or more than one faces are found: im
+    """
+    
     img = im.copy()
     
     #annotate image for demonstration purposes
@@ -44,16 +60,16 @@ def get_eyes(im, landmarks):
         left_points = landmarks[42:48]
         
         #get a rectangular region for both eyes
-        right_eye = im[right_points[2,1]:right_points[5,1],right_points[0,0]-2:right_points[3,0]+2]
-        left_eye = im[right_points[2,1]:right_points[5,1],left_points[0,0]-2:left_points[3,0]+2]
+        right_eye = im[right_points[2,1]-4:right_points[5,1]+4,right_points[0,0]-4:right_points[3,0]+4]
+        left_eye = im[right_points[2,1]-4:right_points[5,1]+4,left_points[0,0]-4:left_points[3,0]+4]
         
         #give these matrices zero mean and unit variance
         right_eye = (right_eye - right_eye.mean())/right_eye.std()
         left_eye = (left_eye - left_eye.mean())/left_eye.std()
         
-        #show for demonstration purposes
-        cv2.imshow('left',left_eye)
-        cv2.imshow('right',right_eye)
+        #uncomment for demonstration purposes
+        #cv2.imshow('left',left_eye)
+        #cv2.imshow('right',right_eye)
         
         return img, left_eye, right_eye
     
@@ -80,11 +96,3 @@ while 1:
 
 cap.release()
 cv2.destroyAllWindows()
-
-
-
-
-
-
-
-
