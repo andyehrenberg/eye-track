@@ -7,6 +7,7 @@ Created on Sat Nov 10 17:03:21 2018
 import dlib
 import cv2
 import numpy as np
+from VideoIO import VideoGet, VideoShow
 
 path = "shape_predictor_68_face_landmarks.dat"
 
@@ -76,11 +77,10 @@ def get_eyes(im, landmarks):
     else:
         return [img]
 
-cap = cv2.VideoCapture(0)
+vid_get = VideoGet(0).start()
 
 while 1:
-    ret, img = cap.read() #read image from webcam
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #get greyscale for face detection
+    img = vid_get.frame
     
     landmarks = get_landmarks(img)
     with_landmarks = get_eyes(img, landmarks)
@@ -91,8 +91,8 @@ while 1:
         pass
     
     k = cv2.waitKey(30) & 0xff
-    if k == 27:
+    if k == 27 or vid_get.stopped:
+        vid_get.stop()
         break
-
-cap.release()
+        
 cv2.destroyAllWindows()
