@@ -15,33 +15,21 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(path)
 
 def get_landmarks(im):
-    """ Returns facial landmarks from image using the shape_predictor_68_face_landmarks.dat pre-trained model
-    Args:
-        im: image from webcam
-    
-    Returns:
-        A matrix of coordinates of facial landmarks
-    """
     #first detect face
     rects = detector(im, 1)
     
     #cases for if multiple or zero faces are detected
-    if len(rects) != 1:
+    if len(rects) > 1:
         return np.matrix([0])
+        #raise TooManyFaces
+    if len(rects) == 0:
+        return np.matrix([0])
+        #raise NoFaces
         
     #return matrix of coordinates of facial landmarks
     return np.matrix([[pt.x, pt.y] for pt in predictor(im, rects[0]).parts()])
 
 def get_eyes(im, landmarks):
-    """ Gets coordinates of eyes, gets rectangular region for each eye, and normalizes these regions
-    Args:
-        im: image from webcam
-        landmarks: coordinates of facial landmarks
-    
-    Returns:
-        If a face is found in im: im, and a normalized image of each eye. If 0 or more than one faces are found: im
-    """
-    
     img = im.copy()
     
     #annotate image for demonstration purposes
@@ -53,24 +41,31 @@ def get_eyes(im, landmarks):
                     color=(0, 0, 255))
         cv2.circle(img, pos, 3, color=(0, 255, 255))
     
-    #only get eye matrices if they were found   
-    if len(landmarks) > 1:    
+    #only get eyes if they are found   
+    if len(landmarks) > 1: 
         
-        #get the landmarks corresponding to the left and right eye
+       #get the landmarks corresponding to the left and right eye
         right_points = landmarks[36:42]
         left_points = landmarks[42:48]
         
+        rh_delta = int((right_points[3,0] - right_points[0,0])*0.2)
+        lh_delta = int((left_points[3,0] - left_points[0,0])*0.2)
+        rv_delta = int((right_points[5,1] - right_points[2,1])*0.2)
+        lv_delta = int((left_points[5,1] - left_points[2,1])*0.2)
+        
         #get a rectangular region for both eyes
-        right_eye = im[right_points[2,1]-4:right_points[5,1]+4,right_points[0,0]-4:right_points[3,0]+4]
-        left_eye = im[right_points[2,1]-4:right_points[5,1]+4,left_points[0,0]-4:left_points[3,0]+4]
+        right_eye = (im[right_points[2,1]-rv_delta:right_points[5,1]+rv_delta,right_points[0,0]-rh_delta:right_points[3,0]+rh_delta])/255.
+        left_eye = (im[right_points[2,1]-lv_delta:right_points[5,1]+lv_delta,left_points[0,0]-lh_delta:left_points[3,0]+lh_delta])/255.
+        right_eye = cv2.resize(right_eye,(60,35))
+        left_eye = cv2.resize(left_eye,(60,35))
         
-        #give these matrices zero mean and unit variance
-        right_eye = (right_eye - right_eye.mean())/right_eye.std()
-        left_eye = (left_eye - left_eye.mean())/left_eye.std()
-        
-        #uncomment for demonstration purposes
-        #cv2.imshow('left',left_eye)
-        #cv2.imshow('right',right_eye)
+        #show for demonstration purposes
+        cv2.namedWindow('left',cv2.WINDOW_NORMAL)
+        cv2.namedWindow('right',cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('left', 180,105)
+        cv2.resizeWindow('right', 180,105)
+        cv2.imshow('left',left_eye)
+        cv2.imshow('right',right_eye)
         
         return img, left_eye, right_eye
     
@@ -80,11 +75,11 @@ def get_eyes(im, landmarks):
 vid_get = VideoGet(0).start()
 
 while 1:
+    #ret, img = cap.read() #read image from webcam
     img = vid_get.frame
-    
+    #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #get greyscale for face detection
     landmarks = get_landmarks(img)
     with_landmarks = get_eyes(img, landmarks)
-    
     try:
         cv2.imshow('img', with_landmarks[0])
     except:
@@ -94,5 +89,5 @@ while 1:
     if k == 27 or vid_get.stopped:
         vid_get.stop()
         break
-        
+
 cv2.destroyAllWindows()
