@@ -62,8 +62,8 @@ def get_eyes(im, landmarks):
         #show for demonstration purposes
         cv2.namedWindow('left',cv2.WINDOW_NORMAL)
         cv2.namedWindow('right',cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('left', 180,105)
-        cv2.resizeWindow('right', 180,105)
+        cv2.resizeWindow('left', 120,70)
+        cv2.resizeWindow('right', 120,70)
         cv2.imshow('left',left_eye)
         cv2.imshow('right',right_eye)
         
