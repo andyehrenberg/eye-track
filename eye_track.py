@@ -55,9 +55,11 @@ def get_eyes(im, landmarks):
         
         #get a rectangular region for both eyes
         right_eye = (im[right_points[2,1]-rv_delta:right_points[5,1]+rv_delta,right_points[0,0]-rh_delta:right_points[3,0]+rh_delta])/255.
-        left_eye = (im[right_points[2,1]-lv_delta:right_points[5,1]+lv_delta,left_points[0,0]-lh_delta:left_points[3,0]+lh_delta])/255.
-        right_eye = cv2.resize(right_eye,(60,35))
-        left_eye = cv2.resize(left_eye,(60,35))
+        left_eye = (im[right_points[2,1]-lv_delta:right_points[5,1]+lv_delta,left_points[0,0]-lh_delta:left_points[3,0]+lh_delta])
+        right_eye = cv2.resize(right_eye,(60,35)).astype('uint8')
+        left_eye = cv2.resize(left_eye,(60,35)).astype('uint8')
+        right_eye = cv2.cvtColor(right_eye, cv2.COLOR_BGR2GRAY)
+        left_eye = cv2.cvtColor(left_eye, cv2.COLOR_BGR2GRAY)
         
         #show for demonstration purposes
         cv2.namedWindow('left',cv2.WINDOW_NORMAL)
