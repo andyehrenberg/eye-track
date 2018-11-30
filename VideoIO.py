@@ -11,7 +11,6 @@ class VideoGet:
     def __init__(self, src=0):
         self.stream = cv2.VideoCapture(src)
         (self.grabbed, self.frame) = self.stream.read()
-        self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
         self.stopped = False
         
     def start(self):
@@ -24,7 +23,6 @@ class VideoGet:
                 self.stop()
             else:
                 (self.grabbed, self.frame) = self.stream.read()
-                self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
                 
     def stop(self):
         self.stopped = True
