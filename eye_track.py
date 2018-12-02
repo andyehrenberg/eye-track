@@ -8,6 +8,7 @@ import dlib
 import cv2
 import numpy as np
 from VideoIO import VideoGet, VideoShow
+import time
 
 path = "shape_predictor_68_face_landmarks.dat"
 
@@ -15,19 +16,26 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(path)
 
 def get_landmarks(im):
+    start = time.time()
     #first detect face
     rects = detector(im, 1)
     
-    #cases for if multiple or zero faces are detected
-    if len(rects) > 1:
-        return np.matrix([0])
-        #raise TooManyFaces
     if len(rects) == 0:
         return np.matrix([0])
-        #raise NoFaces
-        
+    
+    i = 0
+    area = rects[0].area
+    for j in range(1,len(rects)):
+        temp = rects[j].area
+        if temp > area:
+            i = j
+            area = temp
+
     #return matrix of coordinates of facial landmarks
-    return np.matrix([[pt.x, pt.y] for pt in predictor(im, rects[0]).parts()])
+    x = np.matrix([[pt.x, pt.y] for pt in predictor(im, rects[i]).parts()])
+    end = time.time()
+    print('time to get landmarks: ',end - start)
+    return x
 
 def get_eyes(im, landmarks):
     img = im.copy()
@@ -42,22 +50,26 @@ def get_eyes(im, landmarks):
         cv2.circle(img, pos, 3, color=(0, 255, 255))
     
     #only get eyes if they are found   
-    if len(landmarks) > 1: 
-        
+    if len(landmarks) > 1:
+        start = time.time()
        #get the landmarks corresponding to the left and right eye
         right_points = landmarks[36:42]
         left_points = landmarks[42:48]
         
-        rh_delta = int((right_points[3,0] - right_points[0,0])*0.2)
-        lh_delta = int((left_points[3,0] - left_points[0,0])*0.2)
-        rv_delta = int((right_points[5,1] - right_points[2,1])*0.2)
-        lv_delta = int((left_points[5,1] - left_points[2,1])*0.2)
+        rv_min = min([right_points[2,1], right_points[1,1]])
+        rv_max = max([right_points[4,1], right_points[5,1]])
+        lv_min = min([left_points[2,1], left_points[1,1]])
+        lv_max = max([left_points[4,1], left_points[5,1]])
+        rh_delta = int((right_points[3,0] - right_points[0,0])*0.3)
+        lh_delta = int((left_points[3,0] - left_points[0,0])*0.3)
+        rv_delta = int((rv_max - rv_min)*0.3)
+        lv_delta = int((lv_max - lv_min)*0.3)
         
-        #get a rectangular region for both eyes
-        right_eye = (im[right_points[2,1]-rv_delta:right_points[5,1]+rv_delta,right_points[0,0]-rh_delta:right_points[3,0]+rh_delta])
-        left_eye = (im[right_points[2,1]-lv_delta:right_points[5,1]+lv_delta,left_points[0,0]-lh_delta:left_points[3,0]+lh_delta])
-        right_eye = cv2.resize(right_eye,(60,35)).astype('float32')/255.
-        left_eye = cv2.resize(left_eye,(60,35)).astype('float32')/255.
+        #get a rectangular region for both eyes, covert to greyscale
+        right_eye = im[rv_min-rv_delta:rv_max+rv_delta,right_points[0,0]-rh_delta:right_points[3,0]+rh_delta]
+        left_eye = im[lv_min-lv_delta:lv_max+lv_delta,left_points[0,0]-lh_delta:left_points[3,0]+lh_delta]
+        right_eye = cv2.resize(right_eye,(60,36)).astype('float32')/255.
+        left_eye = cv2.resize(left_eye,(60,36)).astype('float32')/255.
         right_eye = cv2.cvtColor(right_eye, cv2.COLOR_BGR2GRAY)
         left_eye = cv2.cvtColor(left_eye, cv2.COLOR_BGR2GRAY)
         
@@ -68,28 +80,34 @@ def get_eyes(im, landmarks):
         cv2.resizeWindow('right', 120,70)
         cv2.imshow('left',left_eye)
         cv2.imshow('right',right_eye)
-        
-        return img, left_eye, right_eye
+        end = time.time()
+        print('time to get eye images: ',end - start)
+        return im, left_eye, right_eye
     
     else:
-        return [img]
+        return [im]
 
 vid_get = VideoGet(0).start()
 
 while 1:
+    start = time.time()
     #ret, img = cap.read() #read image from webcam
     img = vid_get.frame
     #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #get greyscale for face detection
     landmarks = get_landmarks(img)
     with_landmarks = get_eyes(img, landmarks)
+    s1 = time.time()
     try:
         cv2.imshow('img', with_landmarks[0])
     except:
         pass
-    
+    e1 = time.time()
+    print('time to show image:',e1 - s1)
     k = cv2.waitKey(30) & 0xff
     if k == 27 or vid_get.stopped:
         vid_get.stop()
         break
+    end = time.time()
+    print(1./(end - start))
 
 cv2.destroyAllWindows()
