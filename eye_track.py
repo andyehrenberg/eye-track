@@ -26,7 +26,6 @@ def get_landmarks(im):
     #print('time to get face:',end-start)
     
     if len(rects) == 0:
-        roi = None
         return np.matrix([0])
     
     i = 0
@@ -42,6 +41,7 @@ def get_landmarks(im):
     top = rects[i].top()*4
     bottom = rects[i].bottom()*4
     
+    #resize boundary of face for larger resolution image
     rect = dlib.rectangle(left, top, right, bottom)
 
     return np.matrix([[pt.x, pt.y] for pt in predictor(im, rect).parts()])
@@ -66,6 +66,7 @@ def get_eyes(im, landmarks):
         right_points = landmarks[36:42]
         left_points = landmarks[42:48]
         
+        #Setting bounds for eyes
         rv_min = min([right_points[2,1], right_points[1,1]])
         rv_max = max([right_points[4,1], right_points[5,1]])
         lv_min = min([left_points[2,1], left_points[1,1]])
