@@ -106,10 +106,7 @@ fourcc = cv2.VideoWriter_fourcc(*'DIVX')
 out2 = cv2.VideoWriter('eye.avi', fourcc, 20.0, (60, 36))
 
 while 1:
-    #start = time.time()
-    #ret, img = cap.read() #read image from webcam
     img = vid_get.frame
-    #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #get greyscale for face detection
     landmarks = get_landmarks(img)
     with_landmarks = get_eyes(img, landmarks, out2)
     try:
@@ -122,8 +119,6 @@ while 1:
     if k == 27 or vid_get.stopped:
         vid_get.stop()
         break
-    #end = time.time()
-    #print(1./(end - start))
 out1.release()
 out2.release()
 cv2.destroyAllWindows()
